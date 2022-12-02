@@ -1,0 +1,41 @@
+include:
+  - remote: 'https://pipeline-catalog.global.lmco.com/api/v1/modules/stages/v1.0.2/templates/stages.gitlab-ci.yml'
+  - remote: 'https://pipeline-catalog.global.lmco.com/api/v1/global/modules/secret-scans/v2.1.0/pipelines/secrets-basic.gitlab-ci.yml'
+
+
+before_script:
+ - brokercertname=amq-${APP_NAME}.pfx
+ - webcertname=web-${APP_NAME}.pfx
+ - export brokercertname
+ - export webcertname
+
+create-secrets:
+  image: lmregistry.us.lmco.com/lmc.space.spaceitpub.space-it-pub/openshift-oc-helm:latest
+  stage: build
+  script:
+  - sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-*
+  - sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://vault.centos.org|g' /etc/yum.repos.d/CentOS-*
+  - yum update -y
+  - dnf install python3 java jq -y
+  - mkdir ./certs ./key
+  - curl -o ./amq-broker/lm_ca.pem http://crl.external.lmco.com/trust/pem/combined/Combined_pem.pem
+  - pip3 install -r requirements.txt --trusted-host pypi.org --trusted-host pypi.python.org --trusted-host files.pythonhosted.org 
+  - python3 ./scripts/secrets_manager.py create --varname="CERT_PASS"
+  - python3 ./scripts/get_venafi_cert.py --password=$CERT_PASS
+  - BROKER_KEYSTORE_PASSWORD=$CERT_PASS
+  - WEB_KEYSTORE_PASSWORD=$CERT_PASS
+  - keytool -importkeystore -srckeystore ./certs/$brokercertname -srcstorepass $BROKER_KEYSTORE_PASSWORD -srcstoretype pkcs12 -destkeystore broker.ks -deststoretype JKS -deststorepass $BROKER_KEYSTORE_PASSWORD  
+  - keytool -importkeystore -srckeystore ./certs/$webcertname -srcstorepass $WEB_KEYSTORE_PASSWORD -srcstoretype pkcs12 -destkeystore console.ks -deststoretype JKS -deststorepass $WEB_KEYSTORE_PASSWORD
+  - oc login --token=$OSH_TOKEN --server=$SERVER_URL --insecure-skip-tls-verify
+  - oc project $PROJECT_NAME
+  - oc create secret generic $APP_NAME-secret --from-file=broker.ks=broker.ks --from-file=client.ts=broker.ks  --from-literal=keyStorePassword=$BROKER_KEYSTORE_PASSWORD --from-literal=trustStorePassword=$BROKER_KEYSTORE_PASSWORD
+  - oc create secret generic $APP_NAME-wsconsj --from-file=broker.ks=console.ks --from-file=client.ts=console.ks --from-literal=keyStorePassword=$WEB_KEYSTORE_PASSWORD --from-literal=trustStorePassword=$WEB_KEYSTORE_PASSWORD --from-literal=AMQ_CONSOLE_ARGS="--ssl-key /etc/$APP_NAME-wsconsj-volume/broker.ks --ssl-key-password $WEB_KEYSTORE_PASSWORD --ssl-trust /etc/$APP_NAME-wsconsj-volume/client.ts --ssl-trust-password $WEB_KEYSTORE_PASSWORD"
+  tags:
+  - docker
+apply-broker:
+  image: lmregistry.us.lmco.com/lmc.space.spaceitpub.space-it-pub/openshift-oc-helm:latest
+  stage: deploy
+  script: 
+  - oc login --token=$OSH_TOKEN --server=$SERVER_URL --insecure-skip-tls-verify
+  - oc project $PROJECT_NAME
+  - oc process -f ./amq-broker/ActiveMQArtemis_broker-iof.yaml -p BROKER_NAME=$BROKER_NAME -p APP_NAME=$APP_NAME | oc apply -f -

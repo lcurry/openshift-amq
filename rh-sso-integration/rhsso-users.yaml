@@ -1,0 +1,56 @@
+apiVersion: keycloak.org/v1alpha1  
+kind: KeycloakUser
+metadata:
+  name: amqadmin
+spec:
+  realmSelector:
+    matchLabels:
+      realm: myamq-realm
+  user:
+    username: amqadmin
+    credentials:
+      - type: password
+        value: secret
+    enabled: true
+    firstName: AMQ Admin
+    clientRoles:
+      artemis-broker:
+        - admin
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakUser
+metadata:
+  name: amqproducer
+spec:
+  realmSelector:
+    matchLabels:
+      realm: myamq-realm
+  user:
+    username: amqproducer
+    credentials:
+      - type: password
+        value: secret
+    enabled: true
+    firstName: Message producer
+    clientRoles:
+      artemis-broker:
+        - producer
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakUser
+metadata:
+  name: amqconsumer
+spec:
+  realmSelector:
+    matchLabels:
+      realm: myamq-realm
+  user:
+    username: amqconsumer
+    credentials:
+      - type: password
+        value: secret
+    enabled: true
+    firstName: Message consumer
+    clientRoles:
+      artemis-broker:
+        - consumer

@@ -1,0 +1,16 @@
+include:
+  - remote: 'https://pipeline-catalog.global.lmco.com/api/v1/modules/stages/v1.0.2/templates/stages.gitlab-ci.yml'
+  - remote: 'https://pipeline-catalog.global.lmco.com/api/v1/global/modules/secret-scans/v2.1.0/pipelines/secrets-basic.gitlab-ci.yml'
+
+
+build-image:
+  stage: build
+  script:
+  - docker login 
+  - docker build .
+  tags:
+  - docker
+publish-image:
+  stage: publish
+  script: 
+  - docker push

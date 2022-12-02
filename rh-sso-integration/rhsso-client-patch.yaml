@@ -1,0 +1,8 @@
+# Keycloak client secret
+- target:
+    kind: KeycloakClient
+    name: artemis-broker
+  patch: |-
+    - op: replace
+      path: /spec/client/secret
+      value: 0c2edacd-146a-442a-8852-b29d945a96e8

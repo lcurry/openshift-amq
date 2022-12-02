@@ -1,0 +1,81 @@
+apiVersion: broker.amq.io/v1alpha1 
+kind: ActiveMQArtemisSecurity
+metadata:
+  name: keycloak
+spec:
+  loginModules:
+    keycloakLoginModules:
+    - name: keycloak-broker 
+      moduleType: directAccess
+      configuration:
+        enableBasicAuth: false
+        authServerUrl: 'https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/'
+        credentials:
+        - key: secret
+          value: 0c2edacd-146a-442a-8852-b29d945a96e8
+        principalAttribute: preferred_username
+        realm: keycloak-realm
+        resource: artemis-broker
+        sslRequired: none
+        useResourceRoleMappings: true
+    - name: 'keycloak-console'
+      moduleType: 'bearerToken'
+      configuration:
+        enableBasicAuth: false
+        realm: keycloak-realm
+        resource: 'artemis-console'
+        authServerUrl: 'https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/'
+        principalAttribute: 'preferred_username'
+        useResourceRoleMappings: true
+        sslRequired: none
+        confidentialPort: 0
+  securityDomains:
+    brokerDomain:
+      name: 'activemq'
+      loginModules:
+      - name: 'keycloak-broker'
+        reload: true
+        flag: 'required'
+        debug: true
+    consoleDomain:
+      name: 'console'
+      loginModules:
+      - name: 'keycloak-console'
+        flag: required
+        debug: true
+  securitySettings:
+    broker:
+      - match: '#'
+        permissions:
+        - operationType: 'createAddress'
+          roles:
+          - admin
+          - producer
+          - consumer
+        - operationType: 'createDurableQueue'
+          roles:
+          - admin
+          - producer
+          - consumer
+        - operationType: 'deleteDurableQueue'
+          roles:
+          - admin
+        - operationType: 'createNonDurableQueue'
+          roles:
+          - admin
+          - producer
+          - consumer
+        - operationType: 'deleteNonDurableQueue'
+          roles:
+          - admin
+        - operationType: 'send'
+          roles:
+          - admin
+          - producer
+        - operationType: 'consume'
+          roles:
+          - admin
+          - consumer
+    management:
+      hawtioRoles:
+      - admin

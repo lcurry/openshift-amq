@@ -1,0 +1,22 @@
+apiVersion: broker.amq.io/v1alpha1
+kind: ActiveMQArtemisSecurity
+metadata:
+  name: broker-security-config
+spec:
+  applyToCrNames:
+    - "*"
+  #Create a list of propertiesLoginModules for all the users you need created in your broker at creation time  
+  loginModules:
+    propertiesLoginModules:
+    - name: 'prop-module'
+      users:
+      - name: <USERNAME>
+        password: <PASSWORD>
+        roles:
+        - root
+  securityDomains:
+    brokerDomain:
+      name: 'activemq'
+      loginModules:
+      - name: 'prop-module'
+        flag: 'sufficient'

@@ -1,0 +1,21 @@
+---
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemis
+metadata:
+  name: ex-aao
+spec:
+  version: 7.10.1-opr-2
+  deploymentPlan:
+    size: 1
+    image: placeholder
+    # Monitoring Properties
+    jolokiaAgentEnabled: true
+    managementRBACEnabled: true
+  upgrades:
+    enabled: true
+    minor: true
+  # Management Console Properties
+  console:
+    expose: true
+    sslEnabled: true
+    sslSecret: ex-aao-ssl-secret

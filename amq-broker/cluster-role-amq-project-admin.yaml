@@ -1,0 +1,21 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    openshift.io/description: To be assigned to user to allow installation of Kafka CRs.
+  name: kafka-deployer
+rules:
+- apiGroups:
+  - kafkas.strimzi.io
+  resources:
+      - kafkas
+      - kafkabridges
+      - kafkaconnects
+      - kafkaconnectors
+      - kafkamirrormakers
+      - kafkamirrormaker2s
+      - kafkarebalances
+      - kafkatopics
+      - kafkausers 
+  verbs:
+    - '*'

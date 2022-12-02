@@ -1,0 +1,16 @@
+# Realm
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: keycloak-realm
+  labels:
+    app: keycloak
+    realm: myamq-realm
+spec:
+  instanceSelector:
+    matchLabels:
+      app: keycloak
+  realm:
+    realm: myamq-realm
+    enabled: true
+

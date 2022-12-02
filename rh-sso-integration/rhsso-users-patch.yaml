@@ -1,0 +1,37 @@
+# Keycloak user passwords
+- target:
+    kind: KeycloakUser
+    name: admin
+  patch: |-
+    kind: KeycloakUser
+    metadata:
+      name: admin
+    spec:
+      user:
+        credentials:
+          - type: password
+            value: secret
+- target:
+    kind: KeycloakUser
+    name: producer
+  patch: |-
+    kind: KeycloakUser
+    metadata:
+      name: producer
+    spec:
+      user:
+        credentials:
+          - type: password
+            value: secret
+- target:
+    kind: KeycloakUser
+    name: consumer
+  patch: |-
+    kind: KeycloakUser
+    metadata:
+      name: consumer
+    spec:
+      user:
+        credentials:
+          - type: password
+            value: secret
