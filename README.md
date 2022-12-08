@@ -102,21 +102,21 @@ This section discusses the order and steps for deploying an instance of AMQ Brok
 
 ## Create certificates for AMQ Broker 
 
-The procedure in this section shows how to configure one-way Transport Layer Security (TLS) to secure a broker-client connection. In one-way TLS, only the broker presents a certificate. This certificate is used by the client to authenticate the broker.  Although only the broker presents certificates in one-way TLS, the deployment requires you create two secrets in Openshift (steps described below) that contain the server-side broker certificates - one secret holds certs associated with connection from messaging clients AMQP(s), and another secret will hold certs associated with for client connections to the admin console (HTTPs). 
+The procedure in this section shows how to configure one-way Transport Layer Security (TLS) to secure a broker-client connection. In one-way TLS, only the broker presents a certificate. This certificate is used by the client to authenticate the broker.  Although only the broker presents certificates in one-way TLS, the deployment requires you create two secrets in Openshift (steps described below) that contain the server-side broker certificates - one secret holds certs associated with connection from messaging clients AMQP(s), and another secret will hold certs associated with client connections to the admin console (HTTPs). 
 
 Red Hat Documentation is here for crating a self-signed cert and configuring a secret to hold the cert at the broker.  
 https://access.redhat.com/documentation/en-us/red_hat_amq_broker/7.10/html-single/deploying_amq_broker_on_openshift/index#proc-br-configuring-one-way-tls_broker-ocp
 
-You may follow the above instructions "Configuring one-way TLS" to create your own self-signed certs. Note self-signed certs should be used for Development environment only, and not recommended for production.
+You may follow the above instructions "Configuring one-way TLS" to create your own self-signed certs. Note self-signed certs should be used for Development environment only, and not recommended for production, and may present problems in the browser related to connecting to insecure site.
 
 Note when you issue the 'oc create secret generic <secret name>' to create the secret that holds the certs in Openshift, the name of the secrets should match the 'sslSecret' specified in two places in the 'ActiveMQArtemis_broker.yaml' file. 
 
 For a production deployment, you will likely want to use a real certificate created in Venafi.  The instructions 
-for creating cert are included here, as well as reference scripts to create certs through Venafi API are included in this repo.
+for creating cert are included here, as well as a reference python [script](scrip/get_venafi_cert.py) to create certs through Venafi API are included in this repo.
 
 ## Information on certificate SAN 
 
-When requesting certificate for the AMQ Broker use the following names below as the Common Name when creating the certificate. The following applies and will be specific based on your \<broker-name\> and \<your-namespace\>.  Broker name is found in the yaml [file](/amq-broker/ActiveMQArtemis_broker.yaml) used to create the broker, and namespace is the project name you are deploying into.
+When creating certificate for the AMQ Broker, use the following names as Common Name (CN) when creating the certificate. The value will be specific based on your \<broker-name\> and \<your-namespace\>.  Broker name is selected when you apply the CR yaml [file](/amq-broker/ActiveMQArtemis_broker.yaml) used to create the broker, and namespace is the Openshift project name you are deploying into.
 > Note: To keep it simple, we will make the namespace name and broker name the same.
 
 |                 |  Common Name | Subject Alternative Names  |
@@ -124,7 +124,7 @@ When requesting certificate for the AMQ Broker use the following names below as 
 | AMQ Broker |```<broker-name>-amq-0-svc-rte-<your-namespace>.apps.ocp-uge1-dev.ecs.us.lmco.com```|```<broker-name>-amq-0-svc, <broker-name>-amq-0-svc.<your-namespace>.svc, <broker-name>-amq-0-svc.<your-namespace>.svc.cluster.local```|
 | Web Console     |```<broker-name>-wconsj-0-svc-rte-<your-namespace>.apps.ocp-uge1-dev.ecs.us.lmco.com```|```<broker-name>-wconsj-0-svc, <broker-name>-wconsj-0-svc.<your-namespace>.svc, <broker-name>-wconsj-0-svc.<your-namespace>.svc.cluster.local```|
 
-You will receive 2 files one for each certificate that should be named as follows:
+You will create 2 certificate files, one for each certificate. E.g.
 
 ``` Text
 
@@ -146,12 +146,32 @@ You should be able to see information such as CommonName, SubjectAlternativeName
 
 ## **Running get_venafi_cert.py**
 
+This section assumes your execution environment is a Linux bash environment.
 You should have Python3 installed along with the `requests` library, once you do you will need to set the following environment variables in your terminal:
 
 ``` bash
 VENAFI_USER     = #Your venafi Username
 VENAFI_PASSWORD = #Your venafi account password
 PROJECT_NAME    = #Openshift project (Namespace) your project is deployed in
+BROKER_NAME = #The Broker name used in ActiveMQArtemis CR  
+CERT_PASS = #The password you wish to use password and keystore password of generated certificate
+OCP_CLUSTER = # short name identifies the cluster you are targetting used to build the cert SAN e.g. ocp-uge1-dev, ocp-ugw1-dev, ocp-uge1-prd, ocp-ugw1-prd)
+```
+
+Export above variables using command line.  For example:
+``` bash
+export VENAFI_USER=xxx
+export VENAFI_PASSWORD=xxx
+export PROJECT_NAME=my-project
+export BROKER_NAME=my-broker
+export CERT_PASS=changeit
+export OCP_CLUSTER=ocp-uge1-dev    
+```
+
+From the root directory (of this repo) create a 'certs' folder to hold certs created by the script.
+
+``` bash
+mkdir certs
 ```
 
 You will need to download the cert for venafi server and place it on file system to be used as trusted CA:
@@ -161,71 +181,99 @@ You will need to download the cert for venafi server and place it on file system
 curl -o ./amq-broker/lm_ca.pem http://crl.external.lmco.com/trust/pem/combined/Combined_pem.pem
 ```
 
-Running the script `python3 script/get_venafi_cert.py` will download two files to the working folder:
+Run the script to generate certifcats via Venafi. Note this python script run HTTP requests 
+on the Venafi API and requires elevated permissions. The normal default permissions likely
+will not allow you to call the API  and you may get permission (403) return code in which 
+case you will need to use a VENAFI_USER with proper permissions.
+
+Below is an example of the command being run and the output of a successful execution (note the file names of certs maybe different depending on broker name, project name).
+
+``` bash
+$  python3 script/get_venafi_cert.py  --password=$CERT_PASS
+Logging in to Venafi!
+Send Authorize request to Venafi
+Status code: 200
+Reason: OK
+Creating Certificate
+Success
+Downloading Certificate: amq-my-broker.pfx
+Success
+Creating Certificate
+Success
+Downloading Certificate: web-my-broker.pfx
+Success
+
+```
+
+ This script will interact with Venafi API to download two files to the 'certs' folder:
 
 
 ``` text
-amq-<PROJECT NAME>.pfx
-web-<PROJECT NAME>.pfx
+amq-${BROKER_NAME}.pfx
+web-${BROKER_NAME}.pfx
 ```
 
-## Create keystore for broker and web console
+To view and verify the certs you can use the 'keytool -list' command:
 
-In this step we will create broker and web console keystore from the .pfx *PKCS12* certs. The following command uses the 'keytool' command to create the keystore from the cert for broker and web console.
+``` bash
 
-``` Shell
+keytool -list -v -keystore ./certs/amq-${BROKER_NAME}.pfx -storepass $CERT_PASS -storetype PKCS12
+```
+For example:
+``` bash
 
-keytool -importkeystore -srckeystore  <exising cert .pfx file PKCS12 format> -srcalias <Subject name in cert> -srcstorepass <the certs key password> -srcstoretype pkcs12 -destkeystore broker.ks -destalias broker -deststoretype JKS -deststorepass <destination keystore password shuld be same as key trustStorePassword>
+keytool -list -v -keystore ./certs/web-${BROKER_NAME}.pfx -storepass $CERT_PASS -storetype PKCS12
+```
+
+Make note of the SubjectAlternativeName as this will need to match the value of the route HOST/PORT
+once broker is deployed. 
+
+Generate keystore for broker and console  :
+
+``` bash
+keytool -importkeystore -srckeystore ./certs/amq-${BROKER_NAME}.pfx -srcstorepass $CERT_PASS -srcstoretype pkcs12 -destkeystore ./certs/broker.ks -deststoretype JKS -deststorepass $CERT_PASS  
+  
+keytool -importkeystore -srckeystore ./certs/web-${BROKER_NAME}.pfx -srcstorepass $CERT_PASS -srcstoretype pkcs12 -destkeystore ./certs/console.ks -deststoretype JKS -deststorepass $CERT_PASS
+
+```
+You should get a message that the import command completed successfully. Note there may be a warning 
+about proprietary format of the generated keystore file (JKS) rather than the industry standard PKCS12.
+The warning is ok to ignore. 
+If above execute successfully, you will have the AMQ Broker's certificate in the './certs/broker.ks' and the AMQ Broker console certificate in the './certs/console.ks'.
+
+Create the secrets to hold the broker and console certs. Note when creating the secret, OpenShift requires you to specify both a key store and a trust store. The trust store key is generically named client.ts. For one-way TLS between the broker and a client, a trust store is not actually required. However, to successfully generate the secret, you need to specify some valid store file as a value for client.ts. The preceding step provides a "dummy" value for client.ts by reusing the previously-generated server-side key store file. This is sufficient to generate a secret with all of the credentials required for one-way TLS.
+
+``` bash
+
+oc create secret generic ${BROKER_NAME}-secret --from-file=broker.ks=./certs/broker.ks --from-file=client.ts=./certs/broker.ks  --from-literal=keyStorePassword=$CERT_PASS --from-literal=trustStorePassword=$CERT_PASS
+
+oc create secret generic ${BROKER_NAME}-wsconsj --from-file=broker.ks=./certs/console.ks --from-file=client.ts=./certs/console.ks --from-literal=keyStorePassword=$CERT_PASS --from-literal=trustStorePassword=$CERT_PASS --from-literal=AMQ_CONSOLE_ARGS="--ssl-key /etc/${BROKER_NAME}-wsconsj-volume/broker.ks --ssl-key-password $CERT_PASS --ssl-trust /etc/${BROKER_NAME}-wsconsj-volume/client.ts --ssl-trust-password $CERT_PASS"
+ 
 
 ```
 
-The same command format (different arguments) can be used to generate the keystore for the web console. Examples of each are given below.
+If above execute successfully, you will have the AMQ Broker's certificate stored in Openshift secret '$APP_NAME-secret'
+and the AMQ Broker console certificate (plus required AMQ_CONSOLE_ARGS) stored in the Openshift secret '$APP_NAME-wsconsj'.
+To check the values of these secrets:
 
-> NOTE:  use same password for the new destination keystore that was used for the original key. The keystore password and the cert key password should be the same.
-
-For example here as an example command-line for createing keystore for the broker:
-
-``` Shell
-
-keytool -importkeystore -srckeystore  iof-amq-0-svc-rte-iof.apps.ocp-uge1-dev.ecs.us.lmco.com.pfx -srcalias iof-amq-0-svc-rte-iof.apps.ocp-uge1-dev.ecs.us.lmco.com -srcstorepass <keystore password> -srcstoretype pkcs12 -destkeystore broker.ks -destalias broker -deststoretype JKS -deststorepass <keystore password>
-
+``` bash
+oc get secret/${BROKER_NAME}-secret -o yaml
+oc get secret/${BROKER_NAME}-wsconsj -o yaml
 ```
 
-The output keystore will go to a file broker.ks
+Note: the values shown for above will be base64 encoded. To verify the decrypted values you can view these secrets from
+the Openshift console.
 
-And here as an example command-line for createing keystore for the web console:
+## Deploy the broker 
 
-``` Shell
+Once the Secrets have been setup with the certificates.
+To deploy the broker go to the README in the amq-broker sub-folder in this repo  [here](amq-broker/README.md)
 
-keytool -importkeystore -srckeystore  iof-wconsj-0-svc-rte-iof.apps.ocp-uge1-dev.ecs.us.lmco.com.pfx -srcalias iof-wconsj-0-svc-rte-iof.apps.ocp-uge1-dev.ecs.us.lmco.com -srcstorepass <keystore password> -srcstoretype pkcs12 -destkeystore console.ks -destalias console -deststoretype JKS -deststorepass <keystore password>
 
-```
+## Apply Security configuration to integrate with RH-SSO 
 
-The output keystore will go to the file **console.ks**
-
-## Create secrets in Openshift to hold the keystores for broker and web console
-
-In this step we will create the secrets in openshift containing the keystore files for broker and web console. This step is very important.  If 'sslEnabled: true' in your AMQ Broker CR, then failure to create properly named openshift secret(s) - prior to deployment - will result in deployment failure of the broker. 
-
-The secrets we are including in our deployment will include both the  keystores and their respective passwords. One secret is used on the route that handles AMQP(S) messaging traffic to the broker (acceptor), and the other secret is used on the route that will handle HTTPS traffic for the admin console. Use the following commands to create both secrets:
->Be sure you run these commands from the same directory where the keystore (.ks) files exist, and to replace \<password\> with your password for the cert, and \<broker-name\> with the name you used when you created the broker.
-
-``` shell
-oc project <your namespace>
-
-oc create secret generic <your broker-name>-amq-secret --from-file=broker.ks=.\/broker.ks --from-file=client.ts=.\/broker.ks --from-literal=keyStorePassword=<keystore password> --from-literal=trustStorePassword=<truststore password>
-
-oc create secret generic <your broker-name>-amq-secret-wsconsj --from-file=broker.ks=.\/console.ks --from-file=client.ts=.\/console.ks --from-literal=keyStorePassword=<keystore password> --from-literal=trustStorePassword=<truststore password> --from-literal=AMQ_CONSOLE_ARGS="--ssl-key /etc/<your broker-name>-amq-secret-wsconsj-volume/broker.ks --ssl-key-password <truststore password> --ssl-trust /etc/<your broker-name>-amq-secret-wsconsj-volume/client.ts --ssl-trust-password <truststore password>"
-```
-
-> When creating a secret, OpenShift requires you to specify both a key store and a trust store. The trust store key is generically named client.ts. For one-way TLS between the broker and a client, a trust store is not actually required. However, to successfully generate the secret, you need to specify some valid store file as a value for client.ts. The preceding step provides a "dummy" value for client.ts by reusing the previously-generated broker key store file. This is sufficient to generate a secret with all of the credentials required for one-way TLS.
-
-# Integration with RH-SSO 
-This section will describe the steps required for integration with RH-SSO for Authentication.  This section assumes the previous sections have been implemented and you have a running broker with properly configured certificates. Also, you should have a separate namespace where RH-SSO is installed. 
-
-For detailed instructions on applying CRs to integrate AMQ Broker with RH-SSO see
-'rh-sso-integration/README.md'
-
+Once the broker is running, to deploy custom resources to enable AMQ Broker integration 
+with RH-SSO go to the README in the rh-sso-integration sub-folder in this repo  [here](rh-sso-integration/README.md)
 
 # Local Deployments for testing
 

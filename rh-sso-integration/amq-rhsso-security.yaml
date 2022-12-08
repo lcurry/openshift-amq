@@ -16,7 +16,7 @@ spec:
         principalAttribute: preferred_username
         realm: keycloak-realm
         resource: artemis-broker
-        sslRequired: none
+        sslRequired: external
         useResourceRoleMappings: true
     - name: 'keycloak-console'
       moduleType: 'bearerToken'

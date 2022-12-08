@@ -11,8 +11,10 @@ args = parser.parse_args()
 # VENAFI_PASSWORD
 # VENAFI_USER 
 # PROJECT_NAME
+# OCP_CLUSTER
+
 def login_to_venafi():
-    print("Logging in to Venafi")
+    print("Logging in to Venafi!")
     data ={
     "Username": os.getenv('VENAFI_USER'),
     "Password" : os.getenv('VENAFI_PASSWORD')
@@ -20,14 +22,16 @@ def login_to_venafi():
     url = 'https://certm.global.lmco.com/vedsdk/Authorize/'
     requests.post(url, json=data, verify="./amq-broker/lm_ca.pem")
     try:
+        print("Send Authorize request to Venafi")
         apikey = requests.post(url, json=data, verify="./amq-broker/lm_ca.pem")
-        print("Success")
+        print("Status code: " + str(apikey.status_code))
+        print("Reason: " + apikey.reason)
         return apikey.json()["APIKey"]
     except:
         print("Fail")
         exit(1)
 
-def create_cert(apikey,app_name,policydn,subject,namespace,cert_type):
+def create_cert(apikey,app_name,policydn,subject,namespace,cert_type,cluster):
     print("Creating Certificate")    
     url = 'https://certm.global.lmco.com/vedsdk/Certificates/Request'
     apiheader = {
@@ -41,7 +45,7 @@ def create_cert(apikey,app_name,policydn,subject,namespace,cert_type):
         "SubjectAltNames": [
         {
         "TypeName": 2,
-        "Name": app_name+"-"+cert_type+"-0-svc-rte-"+namespace+".apps.ocp-uge1-dev.ecs.us.lmco.com"
+        "Name": app_name+"-"+cert_type+"-0-svc-rte-"+namespace+".apps." + cluster + ".ecs.us.lmco.com"
         },
         {
         "TypeName": 2,
@@ -96,20 +100,21 @@ apikey = login_to_venafi()
 
 policydn="\\VED\\Policy\\Certificates\\Internal\\EBS-TO\\Infrastructure\\Enter Storage & App Infrastructure\\App IF\\"
 projectname=os.getenv('PROJECT_NAME')
-app_name= os.getenv('APP_NAME')
+app_name= os.getenv('BROKER_NAME')
+ocp_cluster = os.getenv('OCP_CLUSTER')
 cert_dn = policydn+app_name
 
 #Create and download the broker certificate
 filename="amq-"+app_name+".pfx"
 cert_type = "amq"
-create_cert(apikey,app_name,policydn,app_name,projectname,cert_type)
+create_cert(apikey,app_name,policydn,app_name,projectname,cert_type,ocp_cluster)
 # We should wait a bit so the cert is ready to download, if we try too fast the download throws a 500
 time.sleep(30)
 download_cert(apikey,cert_dn,filename,args.password)
 
 # Create and download the web certificate
 cert_type = "wconsj"
-create_cert(apikey,app_name,policydn,app_name,projectname,cert_type)
+create_cert(apikey,app_name,policydn,app_name,projectname,cert_type, ocp_cluster)
 # We should wait a bit so the cert is ready to download, if we try too fast the download throws a 500
 time.sleep(30)
 filename="web-"+app_name+".pfx"

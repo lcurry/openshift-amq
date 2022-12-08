@@ -1,0 +1,17 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  annotations:
+    openshift.io/description: To be assigned to user to allow installation of AMQ Broker CRDs
+  name: amq-broker-deployer
+rules:
+  - verbs:
+      - '*'
+    apiGroups:
+      - broker.amq.io
+    resources:
+      - activemqartemisaddresses
+      - activemqartemises
+      - activemqartemisscaledowns
+      - activemqartemissecurities
+

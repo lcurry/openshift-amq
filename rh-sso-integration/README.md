@@ -1,4 +1,8 @@
-# amq-broker
+[[_TOC_]]
+
+# AMQ Broker Integration with RH-SSO
+This section will describe the steps required for integration with RH-SSO for Authentication.  This section assumes the previous sections have been implemented and you have a running broker with properly configured certificates. Also, you should have working instance of RH-SSO installed and available, preferrably in a seperate namespace where you have project admin access and network reachable from the AMQ Broker namespace. 
+
 For further information in applying RH-SSO resources such as realm, client, and users to a RH-SSO instance
 see:
 
@@ -62,11 +66,14 @@ For further information on creating a client CR instance see:
 https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html/server_installation_and_configuration_guide/operator#client-cr
 
 You can use the Operator to create clients in Red Hat Single Sign-On as defined by a custom resource. 
-The following command can be used to deploy the realm. Only pass RH_SSO_NAME parameter if using non-default
-name. 
+The following command can be used to deploy the clients. One RH-SSO Client is used for broker, and one 
+is used for AMQ Console. Only pass RH_SSO_NAME parameter if using non-default name. 
 
 ``` shell
-oc process -f  .\rh-sso-integration\rhsso-client.yaml  -p RH_SSO_NAME=<CR-name>  | oc apply -f - -n <RH-SSO namespace>
+oc process -f  .\rh-sso-integration\rhsso-client-broker.yaml  -p RH_SSO_NAME=<CR-name>  | oc apply -f - -n <RH-SSO namespace>
+
+oc process -f  .\rh-sso-integration\rhsso-client-console.yaml  -p RH_SSO_NAME=<CR-name>  | oc apply -f - -n <RH-SSO namespace>
+
 
 ```
 
@@ -76,10 +83,14 @@ To see the resource properly provisioned
 oc get keycloakclient -n <RH-SSO namespace>
 oc describe keycloakclient artemis-broker -n <RH-SSO namespace>
 
+oc describe keycloakclient artemis-console -n <RH-SSO namespace>
+
 ```
 
 After a client is created, the Operator creates a Secret containing the Client ID and the client’s secret
-using the following naming pattern: keycloak-client-secret-artemis-broker. For example:
+using e.g. the following naming pattern: 'keycloak-client-secret-artemis-broker'.
+
+You can also login to RH-SSO as 'admin' and go to the clientId just created to verify the client is created properly in RH-SSO.
 
 
 ## Creating a user custom resource
@@ -107,10 +118,52 @@ Here is an example of the secret name for admin user when default 'keycloak' was
 
 ## Apply Security to AMQ Broker 
 
-Apply RH-SSO Security Login Module to the existing AMQ Broker 
+Apply RH-SSO Security Login Module to the existing AMQ Broker.  The custom resource is of kind ActiveMQArtemisSecurity.
 Make sure you are applying into the AMQ Broker namespace.
 
 ``` shell
 oc process -f .\rh-sso-integration\amq-rhsso-security.yaml -p RH_SSO_NAME=<CR-name> | oc apply -f - -n <AMQ Broker namespace>
 ```
 
+Give the AMQ Broker pod time to re-start and re-initialize completely before moving on to the steps below of trying to validate web console or broker.  You should see pod 'oc get pods' report back with STATUS "Running".  
+
+## Validate Web console login 
+
+Go to the AMQ BRoker route for the admin console e.g. in the Openshift console find the route for 
+the console having naming convention ${BROKER_NAME}-wconsj-0-svc-rte.
+Client the URL to take you to login for AMQ Admin console. This should now re-direct you
+to RH-SSO login screen where you are asked to enter user/password. 
+You may enter any of the users created in RH-SSO e.g. amqadmin, amqconsumer, amqproducer.  
+All have default password 'secret' as specified in the (already applied) KeycloakUser resources in 'rhsso-users.yaml'. 
+
+## Validate Broker user for Producer/Consumer (machine-to-machine authentication)
+
+Your custom applications (message consumer and producers) must authenticate against the broker, and to 
+do so they need to be assigned user/password for initial connectivity to the broker.  The credentials will be
+assigned to the apps and used by the apps to connect to the broker.  On connection, these apps pass in user/password to the
+standart AMQ / JMS API. How this is done in code is different depending on the implementation language.  
+
+To validate this is working as expected you can 
+first login to the pod running AMQ Broker. For example (your command may look slightly different depending on the broker name)
+
+``` shell
+
+oc rsh my-broker-ss-0
+cd amq-broker/bin
+
+```
+Change directories as shown above into the directory where the 'artemis' tool is located.  This tool can simulate an
+AMQ BRoker consumer/producer. 
+
+To run the command as a producer run the following:
+
+``` shell
+./artemis producer --verbose --user amqproducer --password secret  --destination address.helloworld --message-count 10 --url tcp://my-broker-amq-0-svc:61617 --protocol amqp
+
+```
+From another shell you can run a consumer to consume the messages just generated. E.g. 
+
+``` shell
+./artemis consumer --verbose --user amqconsumer --password secret  --destination address.helloworld --message-count 10 --url tcp://my-broker-amq-0-svc:61617 --protocol amqp
+
+```

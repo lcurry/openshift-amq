@@ -1,4 +1,6 @@
-# amq-broker
+[[_TOC_]]
+
+# AMQ Broker deployment Overview
 
 The CR defined in 'ActiveMQArtemis_broker.yaml' defines a reasonably configured
 AMQ Broker suitable for a production deployment.
@@ -30,17 +32,31 @@ match the name(s) of the secrets your create to hold the certificates.
 
 ## Deploy the broker      
 
-The goal for this template is to allow you to deploy a simple AMQA broker in your project by just applying the yaml templates located in the `amq-broker` folder. You should have the oc tool installed or execute a container image that already has it.
+The goal for this template is to allow you to deploy a simple AMQ broker in your project by just applying the yaml templates located in the `amq-broker` folder. You should have the oc tool installed or execute a container image that already has it.
+
+BROKER_NAME is the name you want your broker to have
+For example, if you wish to deploy a broker names 'my-broker' you can run the following:
 
 ``` shell
-
+export BROKER_NAME=my-broker
 oc process -f ./amq-broker/ActiveMQArtemis_broker.yaml -p BROKER_NAME=$BROKER_NAME | oc apply -f -
 
 ```
 
-BROKER_NAME is the name you want your broker to have
+To then check the status of the broker:
 
-## Test the broker 
+``` shell
+oc describe ActiveMQArtemis/$BROKER_NAME
+```
+
+And to see the logs for a broker pod
+
+``` shell
+oc logs -f $BROKER_NAME-ss-0
+```
+
+
+## Further Testing the broker from external client application (Java)
 
 Go to the repo holding java test client, clone repo locally, and follow the README for building and running client 
 
@@ -57,20 +73,3 @@ oc process -f ./amq-broker/ActiveMQArtemis_broker.yaml -p BROKER_NAME=$BROKER_NA
 
 ```
 
-Notes
-------------------
-
-https://access.redhat.com/solutions/6973707
-
-
-keytool -genkey -alias broker -keyalg RSA -keystore ~/broker.ks
-keytool -export -alias broker -keystore broker.ks -file broker_cert.pem
-keytool -import -alias broker -keystore client.ts -file broker_cert.pem
-
-# CustomResourceName>-<AcceptorName>-secret or <CustomResourceName>-<ConnectorName>-secret. 
-# For example, my-broker-deployment-my-acceptor-secret.
-e.g. default is ex-aao-console-secret 
-I'm specifying ex-aao-ssl-secret
-oc create secret generic ex-aao-ssl-secret --from-file=broker.ks=broker.ks --from-file=client.ts=broker.ks --from-literal=keyStorePassword=password --from-literal=trustStorePassword=password
-
-Copy secret 
