@@ -2,7 +2,7 @@
 apiVersion: keycloak.org/v1alpha1
 kind: KeycloakRealm
 metadata:
-  name: keycloak-realm
+  name: myamq-realm
   labels:
     app: keycloak
     realm: myamq-realm

@@ -9,12 +9,13 @@ spec:
       moduleType: directAccess
       configuration:
         enableBasicAuth: false
-        authServerUrl: 'https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/'
+        #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+        authServerUrl: 'https://keycloak-rh-sso.apps.cluster-jpjnn.jpjnn.sandbox2327.opentlc.com/auth/'
         credentials:
         - key: secret
           value: 0c2edacd-146a-442a-8852-b29d945a96e8
         principalAttribute: preferred_username
-        realm: keycloak-realm
+        realm: myamq-realm
         resource: artemis-broker
         sslRequired: external
         useResourceRoleMappings: true
@@ -22,12 +23,14 @@ spec:
       moduleType: 'bearerToken'
       configuration:
         enableBasicAuth: false
-        realm: keycloak-realm
+        realm: myamq-realm
         resource: 'artemis-console'
-        authServerUrl: 'https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/'
+        publicClient: true
+        #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+        authServerUrl: 'https://keycloak-rh-sso.apps.cluster-jpjnn.jpjnn.sandbox2327.opentlc.com/auth/'
         principalAttribute: 'preferred_username'
         useResourceRoleMappings: true
-        sslRequired: none
+        sslRequired: all
         confidentialPort: 0
   securityDomains:
     brokerDomain:
@@ -79,3 +82,30 @@ spec:
     management:
       hawtioRoles:
       - admin
+      authorisation:
+        allowedList:
+        - domain: "hawtio"      
+        roleAccess:
+        - domain: org.apache.activemq.artemis
+          accessList:
+          - method: "list*"
+            roles:
+            - admin
+          - method: "get*"
+            roles:
+            - admin
+          - method: "is*"
+            roles:
+            - admin
+          - method: "set*"
+            roles:
+            - admin
+          - method: "browse*"
+            roles:
+            - admin
+          - method: "count*"
+            roles:
+            - admin
+          - method: "*"
+            roles:
+            - admin

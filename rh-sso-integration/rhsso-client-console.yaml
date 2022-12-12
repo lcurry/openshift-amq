@@ -2,22 +2,32 @@ apiVersion: keycloak.org/v1alpha1
 kind: KeycloakClient
 metadata:
   name: artemis-console
+  labels:
+    app: keycloak
 spec:
   realmSelector:
     matchLabels:
-      realm: keycloak-realm 
+      realm: myamq-realm 
   client:
     clientId: artemis-console
+    name: artemis-console 
+    description: Client to manage access of AMQ Broker Management Consoles
+    protocol: openid-connect
     enabled: true
-    publicClient: false
+    publicClient: true
+    standardFlowEnabled: true
+    directAccessGrantsEnabled: false
+    serviceAccountsEnabled: false
     clientAuthenticatorType: client-secret
     secret: 0c2edacd-146a-442a-8852-b29d945a96e8
     fullScopeAllowed: true
-    directAccessGrantsEnabled: false
-    protocol: openid-connect
-    standardFlowEnabled: true
-    redirectUris: 
-      - '*'
+# include below the redirect URIs (these are routes for admin console 1 for each broker instance in cluster)
+    redirectUris:
+#      - https://ex-aao-wconsj-0-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+#      - https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+      - https://my-broker-wconsj-0-svc-rte-iof-amq.apps.cluster-jpjnn.jpjnn.sandbox2327.opentlc.com/console/*
+    webOrigins:
+      - '+'
     defaultClientScopes:
       - web-origins
       - role_list

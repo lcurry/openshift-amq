@@ -5,16 +5,18 @@ metadata:
 spec:
   realmSelector:
     matchLabels:
-      realm: keycloak-realm 
+      realm: myamq-realm
   client:
     clientId: artemis-broker
+    name: artemis-broker
+    description: Client to consume or publish messages into an AMQ Broker
     enabled: true
-    publicClient: false
+    protocol: openid-connect
     clientAuthenticatorType: client-secret
     secret: 0c2edacd-146a-442a-8852-b29d945a96e8
-    fullScopeAllowed: true
+    standardFlowEnabled: false
     directAccessGrantsEnabled: true
-    protocol: openid-connect
+    serviceAccountsEnabled: false
     defaultClientScopes:
       - web-origins
       - role_list
