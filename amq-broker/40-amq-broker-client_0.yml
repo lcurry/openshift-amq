@@ -1,0 +1,38 @@
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakClient
+metadata:
+  name: amq-broker
+  labels:
+    app: sso
+spec:
+  realmSelector:
+     matchLabels:
+      app: sso
+  roles:
+    - name: admin
+    - name: consumer
+    - name: sender
+    - name: guest
+  client:
+    clientId: amq-broker
+    name: amq-broker
+    description: Client to consume or publish messages into an AMQ Broker
+    protocol: openid-connect
+    clientAuthenticatorType: client-secret
+    secret: amq-broker-secret-value
+    standardFlowEnabled: false
+    directAccessGrantsEnabled: true
+    serviceAccountsEnabled: false
+    defaultRoles:
+      - guest
+    defaultClientScopes:
+      - email
+      - profile
+      - roles
+      - web-origins
+    optionalClientScopes:
+      - address
+      - microprofile-jwt
+      - offline_access
+      - phone

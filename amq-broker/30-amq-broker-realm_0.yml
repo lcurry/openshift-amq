@@ -1,0 +1,16 @@
+---
+apiVersion: keycloak.org/v1alpha1
+kind: KeycloakRealm
+metadata:
+  name: amq-broker-realm
+  labels:
+    app: sso
+spec:
+  realm:
+    id: "amq-broker-realm"
+    realm: "amq-broker-realm"
+    enabled: true
+    displayName: "Basic Realm for AMQ Broker and AMQ Console"
+  instanceSelector:
+    matchLabels:
+      app: sso

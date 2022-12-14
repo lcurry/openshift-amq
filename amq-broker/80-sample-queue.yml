@@ -1,0 +1,10 @@
+---
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemisAddress
+metadata:
+  name: sample-queue
+spec:
+  addressName: sampleQueue
+  queueName: sampleQueue
+  routingType: anycast
+  removeFromBrokerOnDelete: true

@@ -1,0 +1,140 @@
+---
+apiVersion: broker.amq.io/v1beta1
+kind: ActiveMQArtemisSecurity
+metadata:
+  name: keycloak-module-security
+spec:
+  loginModules:
+    keycloakLoginModules:
+    - name: login-keycloak-broker-module
+      moduleType: directAccess
+      configuration:
+        realm: amq-broker-realm
+        resource: amq-broker
+        authServerUrl: https://keycloak-amq-sso.apps.OPENSHIFT-DOMAIN/auth
+        principalAttribute: preferred_username
+        useResourceRoleMappings: true
+        verifyTokenAudience: true
+        sslRequired: all
+        confidentialPort: 0
+        enableBasicAuth: true
+        credentials:
+        - key: secret
+          value: amq-broker-secret-value
+    - name: login-keycloak-console-module
+      moduleType: bearerToken
+      configuration:
+        realm: amq-broker-realm
+        resource: amq-console
+        publicClient: true
+        authServerUrl: https://keycloak-amq-sso.apps.OPENSHIFT-DOMAIN/auth
+        principalAttribute: preferred_username
+        useResourceRoleMappings: true
+        sslRequired: all
+        verifyTokenAudience: false
+        confidentialPort: 0
+        enableBasicAuth: true
+    # This is useful for the operator to create address from the CR 
+    # (HTTP POST calls to the broker API using generated admin credentials)
+    propertiesLoginModules:
+    - name: prop-module
+  securityDomains:
+    brokerDomain:
+      name: activemq
+      loginModules:
+      - name: login-keycloak-broker-module
+        flag: required
+        debug: true
+    consoleDomain:
+      name: console
+      loginModules:
+      - name: login-keycloak-console-module
+        flag: sufficient
+        debug: true
+      - name: prop-module
+        flag: required
+        debug: true
+  securitySettings:
+    broker:
+      - match: '#'
+        permissions:
+        - operationType: createAddress
+          roles:
+          - admin
+        - operationType: deleteAddress
+          roles:
+          - admin
+        - operationType: createDurableQueue
+          roles:
+          - admin
+        - operationType: deleteDurableQueue
+          roles:
+          - admin
+        - operationType: createNonDurableQueue
+          roles:
+          - admin
+        - operationType: deleteNonDurableQueue
+          roles:
+          - admin
+        - operationType: send
+          roles:
+          - admin
+          - sender
+        - operationType: consume
+          roles:
+          - admin
+          - consumer
+        - operationType: browse
+          roles:
+          - admin
+      - match: 'activemq.management.#'
+        permissions:
+        - operationType: 'createNonDurableQueue'
+          roles:
+          - 'admin'
+        - operationType: 'createAddress'
+          roles:
+          - 'admin'
+        - operationType: 'consume'
+          roles:
+          - 'admin'
+        - operationType: 'manage'
+          roles:
+          - 'admin'
+        - operationType: 'send'
+          roles:
+          - 'admin'
+    management:
+      hawtioRoles:
+      - admin
+      - viewer
+      authorisation:
+        allowedList:
+        - domain: "hawtio"      
+        roleAccess:
+        - domain: org.apache.activemq.artemis
+          accessList:
+          - method: "list*"
+            roles:
+            - admin
+            - viewer
+          - method: "get*"
+            roles:
+            - admin
+            - viewer
+          - method: "is*"
+            roles:
+            - admin
+            - viewer
+          - method: "set*"
+            roles:
+            - admin
+          - method: "browse*"
+            roles:
+            - admin
+          - method: "count*"
+            roles:
+            - admin
+          - method: "*"
+            roles:
+            - admin
