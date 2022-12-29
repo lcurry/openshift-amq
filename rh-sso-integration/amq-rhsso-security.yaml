@@ -20,7 +20,7 @@ objects:
           configuration:
             enableBasicAuth: false
             #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
-            authServerUrl: https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/
+            authServerUrl: https://keycloak-rh-sso.apps.cluster-bjpgj.bjpgj.sandbox2302.opentlc.com/auth/
             credentials:
             - key: secret
               value: 0c2edacd-146a-442a-8852-b29d945a96e8
@@ -37,7 +37,7 @@ objects:
             resource: amq-console
             publicClient: true
             #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
-            authServerUrl: https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/
+            authServerUrl: https://keycloak-rh-sso.apps.cluster-bjpgj.bjpgj.sandbox2302.opentlc.com/auth/
             principalAttribute: 'preferred_username'
             useResourceRoleMappings: true
             sslRequired: all
@@ -53,6 +53,7 @@ objects:
           - name: login-keycloak-broker-module
             flag: required
             debug: true
+            reload: true
         consoleDomain:
           name: console
           loginModules:

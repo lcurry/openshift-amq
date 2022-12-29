@@ -52,7 +52,7 @@ To apply the CR in the realm template run the following:
 ``` shell
 export RH_SSO_NAME=rh-sso
 export BROKER_NAME=my-broker
-oc process -f  .\rh-sso-integration\rhsso-realm.yaml  -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
+oc process -f  ./rh-sso-integration/rhsso-realm.yaml  -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
 
 ```
 
@@ -77,9 +77,9 @@ The following command can be used to deploy the clients. One RH-SSO Client is us
 is used for AMQ Console. Only pass RH_SSO_NAME parameter if using non-default name. 
 
 ``` shell
-oc process -f  .\rh-sso-integration\rhsso-client-broker.yaml  -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
+oc process -f  ./rh-sso-integration/rhsso-client-broker.yaml  -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
 
-oc process -f  .\rh-sso-integration\rhsso-client-console.yaml -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
+oc process -f  ./rh-sso-integration/rhsso-client-console.yaml -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
 
 
 ```
@@ -105,7 +105,7 @@ You can also login to RH-SSO as 'admin' and go to the clientId just created to v
 For further information on creating a user CR instance see Red Hat documentation [here](https://access.redhat.com/documentation/en-us/red_hat_single_sign-on/7.6/html/server_installation_and_configuration_guide/operator#user-cr)
 
 ``` shell
-oc process -f .\rh-sso-integration\rhsso-users.yaml -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
+oc process -f ./rh-sso-integration/rhsso-users.yaml -p RH_SSO_NAME=$RH_SSO_NAME -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <RH-SSO namespace>
 ```
 To see the resource properly provisioned 
 
@@ -125,7 +125,7 @@ Apply RH-SSO Security Login Module to the existing AMQ Broker.  The custom resou
 Make sure you are applying into the AMQ Broker namespace.
 
 ``` shell
-oc process -f .\rh-sso-integration\amq-rhsso-security.yaml -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <AMQ Broker namespace>
+oc process -f ./rh-sso-integration/amq-rhsso-security.yaml -p BROKER_NAME=$BROKER_NAME | oc apply -f - -n <AMQ Broker namespace>
 ```
 
 Give the AMQ Broker pod time to re-start and re-initialize completely before moving on to the steps below of trying to validate web console or broker.  You should see pod 'oc get pods' report back with STATUS "Running".  
@@ -170,3 +170,5 @@ From another shell you can run a consumer to consume the messages just generated
 ./artemis consumer --verbose --user amqconsumer --password secret  --destination address.helloworld --message-count 10 --url tcp://my-broker-amq-0-svc:61617 --protocol amqp
 
 ```
+
+

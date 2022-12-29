@@ -244,7 +244,7 @@ export AMQ_CLUSTER_PASSWORD="see value for this variable in secret ${BROKER_NAME
 Send 10 messages to broker on queue "test" using CORE protocol:
 
 ```
-.\artemis producer --url "tcp://${ROUTE_URL}:443?verifyHost=false&sslEnabled=true&trustStorePath={CERT_LOCATION}&trustStorePassword=${CERT_PASS}" --user ${AMQ_CLUSTER_USER} --password AMQ_CLUSTER_PASSWORD --text-size 100 --message-count 10 --destination queue://test
+.\artemis producer --url "tcp://${ROUTE_URL}:443?verifyHost=false&sslEnabled=true&trustStorePath=${CERT_LOCATION}&trustStorePassword=${CERT_PASS}" --user ${AMQ_CLUSTER_USER} --password ${AMQ_CLUSTER_PASSWORD} --text-size 100 --message-count 10 --destination queue://test
 
 
 ```
@@ -258,14 +258,14 @@ or using AMQP protocol (instead of CORE):
 Receive all 10 messages:
 
 ```
-.\artemis consumer --url "tcp://${ROUTE_URL}:443?verifyHost=false&sslEnabled=true&trustStorePath=${CERT_LOCATION}&trustStorePassword=${CERT_PASS}" --user ${AMQ_CLUSTER_USER} --password AMQ_CLUSTER_PASSWORD --message-count 10 --destination queue://test
+.\artemis consumer --url "tcp://${ROUTE_URL}:443?verifyHost=false&sslEnabled=true&trustStorePath=${CERT_LOCATION}&trustStorePassword=${CERT_PASS}" --user ${AMQ_CLUSTER_USER} --password ${AMQ_CLUSTER_PASSWORD} --message-count 10 --destination queue://test
 
 ```
 
 or through AMQP protocol:
 
 ```
-.\artemis consumer --url "amqps://${ROUTE_URL}:443?transport.verifyHost=false&transport.trustStoreLocation=${CERT_LOCATION}&transport.trustStorePassword=${CERT_PASS}" --user ${AMQ_CLUSTER_USER} --password AMQ_CLUSTER_PASSWORD --message-count 10 --destination queue://amqp-test --protocol amqp
+.\artemis consumer --url "amqps://${ROUTE_URL}:443?transport.verifyHost=false&transport.trustStoreLocation=${CERT_LOCATION}&transport.trustStorePassword=${CERT_PASS}" --user ${AMQ_CLUSTER_USER} --password ${AMQ_CLUSTER_PASSWORD} --message-count 10 --destination queue://amqp-test --protocol amqp
 ```
 
 ## AMQ Broker Authentication 

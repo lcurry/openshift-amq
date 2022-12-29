@@ -6,7 +6,7 @@ metadata:
   annotations:
     description: deployment for ${BROKER_NAME}-template
   name: ${BROKER_NAME}-template
-  objects:
+objects:
 - apiVersion: broker.amq.io/v1beta1
   kind: ActiveMQArtemis
   metadata:

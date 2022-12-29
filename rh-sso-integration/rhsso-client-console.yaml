@@ -35,7 +35,7 @@ objects:
         redirectUris:
     #      - https://ex-aao-wconsj-0-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
     #      - https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
-          - https://my-broker-wconsj-0-svc-rte-iof-amq.apps.ocp-ugw1-dev.ecs.us.lmco.com/console/*
+          - https://amq-broker-wconsj-0-svc-rte-iof-amq.apps.cluster-bjpgj.bjpgj.sandbox2302.opentlc.com/console/*
         webOrigins:
           - '+'
         defaultRoles:

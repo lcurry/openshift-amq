@@ -30,6 +30,7 @@ objects:
         directAccessGrantsEnabled: true
         serviceAccountsEnabled: false
         defaultClientScopes:
+          - role_list
           - email
           - profile
           - roles
