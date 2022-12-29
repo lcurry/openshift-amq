@@ -1,45 +1,61 @@
-apiVersion: keycloak.org/v1alpha1
-kind: KeycloakClient
+# Keycloak Client for AMQ Console  
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: ${BROKER_NAME}-client-console-template
 metadata:
-  name: artemis-console
-  labels:
-    app: keycloak
-spec:
-  realmSelector:
-    matchLabels:
-      realm: myamq-realm 
-  client:
-    clientId: artemis-console
-    name: artemis-console 
-    description: Client to manage access of AMQ Broker Management Consoles
-    protocol: openid-connect
-    enabled: true
-    publicClient: true
-    standardFlowEnabled: true
-    directAccessGrantsEnabled: false
-    serviceAccountsEnabled: false
-    clientAuthenticatorType: client-secret
-    secret: 0c2edacd-146a-442a-8852-b29d945a96e8
-    fullScopeAllowed: true
-# include below the redirect URIs (these are routes for admin console 1 for each broker instance in cluster)
-    redirectUris:
-#      - https://ex-aao-wconsj-0-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
-#      - https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
-      - https://my-broker-wconsj-0-svc-rte-iof-amq.apps.cluster-jpjnn.jpjnn.sandbox2327.opentlc.com/console/*
-    webOrigins:
-      - '+'
-    defaultClientScopes:
-      - web-origins
-      - role_list
-      - profile
-      - roles
-      - email
-    optionalClientScopes:
-      - address
-      - phone
-      - offline_access
-      - microprofile-jwt
-  roles:
-    - name: admin
-    - name: producer
-    - name: consumer
+  annotations:
+    description: Template for ${BROKER_NAME} (console) client 
+  name: ${BROKER_NAME}-client-console-template
+objects:
+  - apiVersion: keycloak.org/v1alpha1
+    kind: KeycloakClient
+    metadata:
+      name: amq-console
+      labels:
+        app: ${RH_SSO_NAME}
+    spec:
+      realmSelector:
+        matchLabels:
+          realm: ${BROKER_NAME}-realm
+      client:
+        clientId: amq-console
+        name: amq-console 
+        description: Client to manage access of AMQ Broker Management Consoles
+        protocol: openid-connect
+        enabled: true
+        publicClient: true
+        standardFlowEnabled: true
+        directAccessGrantsEnabled: false
+        serviceAccountsEnabled: false
+        clientAuthenticatorType: client-secret
+        secret: 0c2edacd-146a-442a-8852-b29d945a96e8
+        fullScopeAllowed: true
+    # include below the redirect URIs (these are routes for admin console 1 for each broker instance in cluster)
+        redirectUris:
+    #      - https://ex-aao-wconsj-0-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+    #      - https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+          - https://my-broker-wconsj-0-svc-rte-iof-amq.apps.ocp-ugw1-dev.ecs.us.lmco.com/console/*
+        webOrigins:
+          - '+'
+        defaultRoles:
+          - viewer
+        defaultClientScopes:
+          - acr
+          - email
+          - profile
+          - roles
+          - web-origins
+        optionalClientScopes:
+          - address
+          - microprofile-jwt
+          - offline_access
+          - phone
+      roles:
+        - name: admin
+        - name: viewer
+parameters:
+  - name: RH_SSO_NAME
+    value: keycloak
+  - name: BROKER_NAME
+    value: my-broker

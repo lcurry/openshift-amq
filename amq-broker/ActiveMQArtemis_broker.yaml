@@ -6,7 +6,7 @@ metadata:
   annotations:
     description: deployment for ${BROKER_NAME}-template
   name: ${BROKER_NAME}-template
-objects:
+  objects:
 - apiVersion: broker.amq.io/v1beta1
   kind: ActiveMQArtemis
   metadata:
@@ -23,7 +23,9 @@ objects:
         sslEnabled: true
         sslSecret: ${BROKER_NAME}-secret
     adminUser:  admin
-    adminPassword: admin
+  # If admin password not specified will be auto-generated and stored in 
+  # secret named '${Broker_NAME}-credentials-secret'  
+  #  adminPassword: admin
     console:
       expose: true
       sslEnabled: true
@@ -31,23 +33,26 @@ objects:
     deploymentPlan:
       size: 1
       image: placeholder
-      journalType: aio
       persistenceEnabled: true
- # To specify a size for the persistent storage default is  2 GiB
- #     storage:
- #         size: 10Gi
+      # Monitoring Properties
+      jolokiaAgentEnabled: true
+      managementRBACEnabled: true
+  # To specify a size for the persistent storage default is  2 GiB
+  #     storage:
+  #         size: 10Gi
       messageMigration: true
-      requireLogin: false
+  # If set to true, login is required. If not specified, or set to false, anonymous access is permitted.
+      requireLogin: true
       enableMetricsPlugin: true
-#      resources:
-#          limits:
-# set to 1 core (1000 microcores) limit
-#              cpu: "1000m"
-# set to 2 GB limit
-#              memory: "2048M"
-#          requests:
-#              cpu: "500m"
-#              memory: "1024M"
+    resources:
+      limits:
+        # set to 1 core (1000 microcores) limit
+        cpu: "1000m"
+        # set to 2 GB limit
+        memory: "2048M"
+      requests:
+        cpu: "500m"
+        memory: "1024M"
 parameters:
   - name: BROKER_NAME
     value: "amq-broker"

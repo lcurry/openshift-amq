@@ -1,111 +1,151 @@
-apiVersion: broker.amq.io/v1alpha1 
-kind: ActiveMQArtemisSecurity
+# ActiveMQArtemisSecurity for AMQ Broker defines login modules, and role bindings
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: ${BROKER_NAME}-security-broker-template
 metadata:
-  name: keycloak
-spec:
-  loginModules:
-    keycloakLoginModules:
-    - name: keycloak-broker 
-      moduleType: directAccess
-      configuration:
-        enableBasicAuth: false
-        #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
-        authServerUrl: 'https://keycloak-rh-sso.apps.cluster-jpjnn.jpjnn.sandbox2327.opentlc.com/auth/'
-        credentials:
-        - key: secret
-          value: 0c2edacd-146a-442a-8852-b29d945a96e8
-        principalAttribute: preferred_username
-        realm: myamq-realm
-        resource: artemis-broker
-        sslRequired: external
-        useResourceRoleMappings: true
-    - name: 'keycloak-console'
-      moduleType: 'bearerToken'
-      configuration:
-        enableBasicAuth: false
-        realm: myamq-realm
-        resource: 'artemis-console'
-        publicClient: true
-        #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
-        authServerUrl: 'https://keycloak-rh-sso.apps.cluster-jpjnn.jpjnn.sandbox2327.opentlc.com/auth/'
-        principalAttribute: 'preferred_username'
-        useResourceRoleMappings: true
-        sslRequired: all
-        confidentialPort: 0
-  securityDomains:
-    brokerDomain:
-      name: 'activemq'
+  annotations:
+    description: Template for ${BROKER_NAME} security 
+  name: ${BROKER_NAME}-security-broker-template
+objects:
+  - apiVersion: broker.amq.io/v1alpha1 
+    kind: ActiveMQArtemisSecurity
+    metadata:
+      name: keycloak
+    spec:
       loginModules:
-      - name: 'keycloak-broker'
-        reload: true
-        flag: 'required'
-        debug: true
-    consoleDomain:
-      name: 'console'
-      loginModules:
-      - name: 'keycloak-console'
-        flag: required
-        debug: true
-  securitySettings:
-    broker:
-      - match: '#'
-        permissions:
-        - operationType: 'createAddress'
-          roles:
+        keycloakLoginModules:
+        - name: login-keycloak-broker-module 
+          moduleType: directAccess
+          configuration:
+            enableBasicAuth: false
+            #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+            authServerUrl: https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/
+            credentials:
+            - key: secret
+              value: 0c2edacd-146a-442a-8852-b29d945a96e8
+            principalAttribute: preferred_username
+            realm: ${BROKER_NAME}-realm
+            resource: amq-broker
+            sslRequired: external
+            useResourceRoleMappings: true
+        - name: login-keycloak-console-module
+          moduleType: 'bearerToken'
+          configuration:
+            enableBasicAuth: false
+            realm: ${BROKER_NAME}-realm
+            resource: amq-console
+            publicClient: true
+            #authServerUrl: https://ex-aao-wconsj-1-svc-rte-amq-sso.apps.OPENSHIFT-DOMAIN/console/*
+            authServerUrl: https://keycloak-rh-sso.apps.ocp-uge1-dev.ecs.us.lmco.com/auth/
+            principalAttribute: 'preferred_username'
+            useResourceRoleMappings: true
+            sslRequired: all
+            confidentialPort: 0
+        # This is useful for the operator to create address from the CR 
+        # (HTTP POST calls to the broker API using generated admin credentials)
+        propertiesLoginModules:
+        - name: prop-module
+      securityDomains:
+        brokerDomain:
+          name: activemq
+          loginModules:
+          - name: login-keycloak-broker-module
+            flag: required
+            debug: true
+        consoleDomain:
+          name: console
+          loginModules:
+          - name: login-keycloak-console-module
+            flag: sufficient
+            debug: true
+          - name: prop-module
+            flag: required
+            debug: true
+      securitySettings:
+        broker:
+          - match: '#'
+            permissions:
+            - operationType: createAddress
+              roles:
+              - admin
+            - operationType: deleteAddress
+              roles:
+              - admin
+            - operationType: createDurableQueue
+              roles:
+              - admin
+            - operationType: deleteDurableQueue
+              roles:
+              - admin
+            - operationType: createNonDurableQueue
+              roles:
+              - admin
+            - operationType: deleteNonDurableQueue
+              roles:
+              - admin
+            - operationType: send
+              roles:
+              - admin
+              - sender
+            - operationType: consume
+              roles:
+              - admin
+              - consumer
+            - operationType: browse
+              roles:
+              - admin
+          - match: 'activemq.management.#'
+            permissions:
+            - operationType: 'createNonDurableQueue'
+              roles:
+              - 'admin'
+            - operationType: 'createAddress'
+              roles:
+              - 'admin'
+            - operationType: 'consume'
+              roles:
+              - 'admin'
+            - operationType: 'manage'
+              roles:
+              - 'admin'
+            - operationType: 'send'
+              roles:
+              - 'admin'
+        management:
+          hawtioRoles:
           - admin
-          - producer
-          - consumer
-        - operationType: 'createDurableQueue'
-          roles:
-          - admin
-          - producer
-          - consumer
-        - operationType: 'deleteDurableQueue'
-          roles:
-          - admin
-        - operationType: 'createNonDurableQueue'
-          roles:
-          - admin
-          - producer
-          - consumer
-        - operationType: 'deleteNonDurableQueue'
-          roles:
-          - admin
-        - operationType: 'send'
-          roles:
-          - admin
-          - producer
-        - operationType: 'consume'
-          roles:
-          - admin
-          - consumer
-    management:
-      hawtioRoles:
-      - admin
-      authorisation:
-        allowedList:
-        - domain: "hawtio"      
-        roleAccess:
-        - domain: org.apache.activemq.artemis
-          accessList:
-          - method: "list*"
-            roles:
-            - admin
-          - method: "get*"
-            roles:
-            - admin
-          - method: "is*"
-            roles:
-            - admin
-          - method: "set*"
-            roles:
-            - admin
-          - method: "browse*"
-            roles:
-            - admin
-          - method: "count*"
-            roles:
-            - admin
-          - method: "*"
-            roles:
-            - admin
+          - viewer
+          authorisation:
+            allowedList:
+            - domain: "hawtio"      
+            roleAccess:
+            - domain: org.apache.activemq.artemis
+              accessList:
+              - method: "list*"
+                roles:
+                - admin
+                - viewer
+              - method: "get*"
+                roles:
+                - admin
+                - viewer
+              - method: "is*"
+                roles:
+                - admin
+                - viewer
+              - method: "set*"
+                roles:
+                - admin
+              - method: "browse*"
+                roles:
+                - admin
+              - method: "count*"
+                roles:
+                - admin
+              - method: "*"
+                roles:
+                - admin
+parameters:
+  - name: BROKER_NAME
+    value: my-broker

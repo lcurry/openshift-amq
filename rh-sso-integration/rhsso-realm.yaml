@@ -1,16 +1,33 @@
-# Realm
-apiVersion: keycloak.org/v1alpha1
-kind: KeycloakRealm
+# Keycloak Realm for AMQ Broker instance 
+apiVersion: template.openshift.io/v1
+kind: Template
+labels:
+  template: ${BROKER_NAME}-realm-template
 metadata:
-  name: myamq-realm
-  labels:
-    app: keycloak
-    realm: myamq-realm
-spec:
-  instanceSelector:
-    matchLabels:
-      app: keycloak
-  realm:
-    realm: myamq-realm
-    enabled: true
+  annotations:
+    description: Template for ${BROKER_NAME} realm
+  name: ${BROKER_NAME}-realm-template
+objects:
+- apiVersion: keycloak.org/v1alpha1
+  kind: KeycloakRealm
+  metadata:
+    name: ${BROKER_NAME}-realm
+    labels:
+      app: ${RH_SSO_NAME}
+      realm: ${BROKER_NAME}-realm
+  spec:
+    instanceSelector:
+      matchLabels:
+        app: ${RH_SSO_NAME}
+    realm:
+      id: ${BROKER_NAME}-realm
+      realm: ${BROKER_NAME}-realm
+      enabled: true
+      displayName: "Basic Realm for AMQ Broker and AMQ Console"
+parameters:
+  - name: RH_SSO_NAME
+    value: keycloak
+  - name: BROKER_NAME
+    value: my-broker
+
 
